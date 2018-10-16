@@ -1,16 +1,17 @@
 package main
 
 import (
-	"github.com/tuotoo/qrcode"
 	"log"
 	"os"
 	"time"
+
+	"github.com/zwj186/qrcode"
 )
 
 var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
 
 func main() {
-	startAt :=time.Now()
+	startAt := time.Now()
 	fi, err := os.Open("qrcode11.png")
 	if !check(err) {
 		return
@@ -18,7 +19,7 @@ func main() {
 	defer fi.Close()
 	qrcode.SetDebug(false)
 	qrMatrix, err := qrcode.Decode(fi)
-	if !check(err){
+	if !check(err) {
 		return
 	}
 	logger.Println(qrMatrix.Content)

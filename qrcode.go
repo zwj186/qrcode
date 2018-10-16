@@ -1,8 +1,8 @@
 package qrcode
 
 import (
+	"errors"
 	"fmt"
-	"github.com/maruel/rs"
 	"image"
 	"image/color"
 	"image/draw"
@@ -12,12 +12,13 @@ import (
 	"log"
 	"math"
 	"os"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
 	"time"
-	"errors"
-	"path/filepath"
+
+	"github.com/maruel/rs"
 )
 
 var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
@@ -85,7 +86,8 @@ func (mx *Matrix) FormatInfo() (ErrorCorrectionLevel, Mask int) {
 		Mask = unmaskFileData >> 10 & 7
 		return
 	}
-	panic("not found error correction level and mask")
+	return 0, 0
+	//panic("not found error correction level and mask")
 }
 
 func (mx *Matrix) GetBin(poss []Pos) int {
@@ -113,7 +115,7 @@ type Pos struct {
 func bch(org int) int {
 	var g = 0x537
 	for i := 4; i > -1; i-- {
-		if org&(1<<(uint(i + 10))) > 0 {
+		if org&(1<<(uint(i+10))) > 0 {
 			org ^= g << uint(i)
 		}
 	}
@@ -265,7 +267,6 @@ func PossToGroup(group []Pos) *PosGroup {
 }
 
 func check(err error, backLevel ...int) (ok bool) {
-
 	if err != nil {
 		if debug {
 			level := 1
@@ -520,8 +521,8 @@ func GetData(unmaskMatrix, dataArea *Matrix) []bool {
 			t = t - 1
 		}
 		for y := 0; y <= maxPos; y++ {
-			for x := t; x >= t-1; x-- {
-				if dataArea.Points[y][x] {
+			for x := t; x >= t-1 && x >= 0; x-- {
+				if x < len(unmaskMatrix.Points[y]) && dataArea.Points[y][x] {
 					data = append(data, unmaskMatrix.Points[y][x])
 				}
 			}
@@ -535,10 +536,20 @@ func Bits2Bytes(dataCode []bool, version int) []byte {
 	format := Bit2Int(dataCode[0:4])
 	offset := GetDataEncoder(version).CharCountBits(format)
 	length := Bit2Int(dataCode[4 : 4+offset])
-	dataCode = dataCode[4+offset : length*8+4+offset]
+	lpos := 4 + offset
+	hpos := length*8 + 4 + offset
+	size := len(dataCode)
+	if hpos > size-1 {
+		hpos = size - 1
+	}
+	dataCode = dataCode[lpos:hpos]
 	var result []byte
-	for i := 0; i < length*8; {
-		result = append(result, Bit2Byte(dataCode[i:i+8]))
+	for i := 0; i < length*8 && i < size; {
+		ipos := i + 8
+		if ipos > size-1 {
+			ipos = size - 1
+		}
+		result = append(result, Bit2Byte(dataCode[i:ipos]))
 		i += 8
 	}
 	return result
@@ -681,7 +692,7 @@ func ExportEveryGroup(size image.Rectangle, hollow [][]Pos, filename string) {
 	}
 }
 
-func ExportGroups(size image.Rectangle, hollow []*PosGroup, filename string) {
+func ExportGroups(size image.Rectangle, hollow []*PosGroup, filename string) (err error) {
 	if !debug {
 		return
 	}
@@ -692,11 +703,12 @@ func ExportGroups(size image.Rectangle, hollow []*PosGroup, filename string) {
 		}
 	}
 	outImg, err := os.Create(filename + ".png")
-	if !check(err) {
-		panic(err)
-	}
 	defer outImg.Close()
+	if !check(err) {
+		return err
+	}
 	png.Encode(outImg, result)
+	return err
 }
 
 // ExportGroup debug模式将二值化数据导出到图片
@@ -821,7 +833,10 @@ func DecodeImg(img image.Image) (*Matrix, error) {
 		}
 	}
 	for i, pattern := range positionDetectionPatterns {
-		ExportGroups(matrix.OrgSize, pattern, "positionDetectionPattern"+strconv.FormatInt(int64(i), 10))
+		err := ExportGroups(matrix.OrgSize, pattern, "positionDetectionPattern"+strconv.FormatInt(int64(i), 10))
+		if err != nil {
+			return nil, err
+		}
 	}
 	lineWidth := LineWidth(positionDetectionPatterns)
 	if debug {
