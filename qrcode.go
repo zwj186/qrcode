@@ -55,7 +55,12 @@ type Matrix struct {
 }
 
 func (mx *Matrix) At(x, y int) bool {
-	return mx.OrgPoints[y][x]
+	if y < len(mx.OrgPoints) {
+		if x < len(mx.OrgPoints[y]) {
+			return mx.OrgPoints[y][x]
+		}
+	}
+	return false
 }
 
 func (mx *Matrix) FormatInfo() (ErrorCorrectionLevel, Mask int) {
