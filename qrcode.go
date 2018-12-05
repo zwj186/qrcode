@@ -55,12 +55,14 @@ type Matrix struct {
 }
 
 func (mx *Matrix) At(x, y int) bool {
-	if y < len(mx.OrgPoints) {
-		if x < len(mx.OrgPoints[y]) {
+	// modify by zwj186
+	if y >= 0 && y < len(mx.OrgPoints) {
+		if x >= 0 && x < len(mx.OrgPoints[y]) {
 			return mx.OrgPoints[y][x]
 		}
 	}
 	return false
+	//return mx.OrgPoints[y][x]
 }
 
 func (mx *Matrix) FormatInfo() (ErrorCorrectionLevel, Mask int) {
@@ -619,14 +621,14 @@ func Line(start, end *Pos, matrix *Matrix) (line []bool) {
 				k := float64(end.Y-start.Y) / float64(length)
 				x := start.X + i
 				y := start.Y + int(k*float64(i))
-				line = append(line, matrix.OrgPoints[y][x])
+				line = append(line, matrix.At(x, y)) // modify
 			}
 		} else {
 			for i := 0; i >= length; i-- {
 				k := float64(end.Y-start.Y) / float64(length)
 				x := start.X + i
 				y := start.Y + int(k*float64(i))
-				line = append(line, matrix.OrgPoints[y][x])
+				line = append(line, matrix.At(x, y)) // modify
 			}
 		}
 	} else {
@@ -636,14 +638,14 @@ func Line(start, end *Pos, matrix *Matrix) (line []bool) {
 				k := float64(end.X-start.X) / float64(length)
 				y := start.Y + i
 				x := start.X + int(k*float64(i))
-				line = append(line, matrix.OrgPoints[y][x])
+				line = append(line, matrix.At(x, y)) // modify
 			}
 		} else {
 			for i := 0; i >= length; i-- {
 				k := float64(end.X-start.X) / float64(length)
 				y := start.Y + i
 				x := start.X + int(k*float64(i))
-				line = append(line, matrix.OrgPoints[y][x])
+				line = append(line, matrix.At(x, y)) // modify
 			}
 		}
 	}
