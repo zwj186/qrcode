@@ -93,8 +93,8 @@ func (mx *Matrix) FormatInfo() (ErrorCorrectionLevel, Mask int) {
 		Mask = unmaskFileData >> 10 & 7
 		return
 	}
-	return 0, 0
 	//panic("not found error correction level and mask")
+	return 0, 0
 }
 
 func (mx *Matrix) AtPoints(x, y int) bool {
@@ -548,9 +548,16 @@ func GetData(unmaskMatrix, dataArea *Matrix) []bool {
 	return data
 }
 
-func Bits2Bytes(dataCode []bool, version int) []byte {
+func Bits2Bytes(dataCode []bool, version int) (result []byte, err error) {
 	format := Bit2Int(dataCode[0:4])
-	offset := GetDataEncoder(version).CharCountBits(format)
+	encoder, err := GetDataEncoder(version)
+	if err != nil {
+		return result, err
+	}
+	offset, err := encoder.CharCountBits(format)
+	if err != nil {
+		return result, err
+	}
 	length := Bit2Int(dataCode[4 : 4+offset])
 	lpos := 4 + offset
 	hpos := length*8 + 4 + offset
@@ -559,7 +566,6 @@ func Bits2Bytes(dataCode []bool, version int) []byte {
 		hpos = size - 1
 	}
 	dataCode = dataCode[lpos:hpos]
-	var result []byte
 	for i := 0; i < length*8 && i < size; {
 		ipos := i + 8
 		if ipos > size-1 {
@@ -568,7 +574,7 @@ func Bits2Bytes(dataCode []bool, version int) []byte {
 		result = append(result, Bit2Byte(dataCode[i:ipos]))
 		i += 8
 	}
-	return result
+	return result, err
 }
 
 func StringBool(dataCode []bool) string {
@@ -953,9 +959,9 @@ func Decode(fi io.Reader) (*Matrix, error) {
 	dataArea := unmaskMatrix.DataArea()
 	ExportMatrix(qrMatrix.Size, dataArea.Points, "mask")
 	dataCode := ParseBlock(qrMatrix, GetData(unmaskMatrix, dataArea))
-	bt := Bits2Bytes(dataCode, unmaskMatrix.Version())
+	bt, err := Bits2Bytes(dataCode, unmaskMatrix.Version())
 	qrMatrix.Content = string(bt)
-	return qrMatrix, nil
+	return qrMatrix, err
 }
 
 func QRReconstruct(data, ecc []byte) []byte {

@@ -1,6 +1,9 @@
 package qrcode
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // Error detection/recovery capacity.
 //
@@ -2865,29 +2868,31 @@ var dataEncoderTypeMap = map[dataEncoderType]*dataEncoder{
 	},
 }
 
-func GetDataEncoder(version int) *dataEncoder {
+func GetDataEncoder(version int) (de *dataEncoder, err error) {
 	switch {
 	case version >= 1 && version <= 9:
-		return dataEncoderTypeMap[dataEncoderType1To9]
+		return dataEncoderTypeMap[dataEncoderType1To9], nil
 	case version >= 10 && version <= 26:
-		return dataEncoderTypeMap[dataEncoderType10To26]
+		return dataEncoderTypeMap[dataEncoderType10To26], nil
 	case version >= 27 && version <= 40:
-		return dataEncoderTypeMap[dataEncoderType27To40]
+		return dataEncoderTypeMap[dataEncoderType27To40], nil
 	default:
-		panic("Version not found")
+		//panic("Version not found")
+		return nil, errors.New("Version Not Found")
 	}
 }
 
-func (de *dataEncoder) CharCountBits(format int) int {
+func (de *dataEncoder) CharCountBits(format int) (offset int, err error) {
 	switch format {
 	case 1:
-		return de.numNumericCharCountBits
+		return de.numNumericCharCountBits, nil
 	case 2:
-		return de.numAlphanumericCharCountBits
+		return de.numAlphanumericCharCountBits, nil
 	case 4:
-		return de.numByteCharCountBits
+		return de.numByteCharCountBits, nil
 	default:
-		panic(fmt.Sprintf("format not found : %d", format))
+		//panic(fmt.Sprintf("format not found : %d", format))
+		return -1, errors.New(fmt.Sprintf("Format Not Found: %d", format))
 	}
-	return 0
+	return 0, err
 }
