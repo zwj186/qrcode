@@ -54,7 +54,7 @@ type Matrix struct {
 	Content   string
 }
 
-func (mx *Matrix) At(x, y int) bool {
+func (mx *Matrix) AtOrgPoints(x, y int) bool {
 	// modify by zwj186
 	if y >= 0 && y < len(mx.OrgPoints) {
 		if x >= 0 && x < len(mx.OrgPoints[y]) {
@@ -97,10 +97,19 @@ func (mx *Matrix) FormatInfo() (ErrorCorrectionLevel, Mask int) {
 	//panic("not found error correction level and mask")
 }
 
+func (mx *Matrix) AtPoints(x, y int) bool {
+	if y >= 0 && y < len(mx.Points) {
+		if x >= 0 && x < len(mx.Points[y]) {
+			return mx.Points[y][x]
+		}
+	}
+	return false
+}
+
 func (mx *Matrix) GetBin(poss []Pos) int {
 	var fileData int
 	for _, pos := range poss {
-		if mx.Points[pos.Y][pos.X] {
+		if mx.AtPoints(pos.X, pos.Y) {
 			fileData = fileData<<1 + 1
 		} else {
 			fileData = fileData << 1
@@ -621,14 +630,14 @@ func Line(start, end *Pos, matrix *Matrix) (line []bool) {
 				k := float64(end.Y-start.Y) / float64(length)
 				x := start.X + i
 				y := start.Y + int(k*float64(i))
-				line = append(line, matrix.At(x, y)) // modify
+				line = append(line, matrix.AtOrgPoints(x, y)) // modify
 			}
 		} else {
 			for i := 0; i >= length; i-- {
 				k := float64(end.Y-start.Y) / float64(length)
 				x := start.X + i
 				y := start.Y + int(k*float64(i))
-				line = append(line, matrix.At(x, y)) // modify
+				line = append(line, matrix.AtOrgPoints(x, y)) // modify
 			}
 		}
 	} else {
@@ -638,14 +647,14 @@ func Line(start, end *Pos, matrix *Matrix) (line []bool) {
 				k := float64(end.X-start.X) / float64(length)
 				y := start.Y + i
 				x := start.X + int(k*float64(i))
-				line = append(line, matrix.At(x, y)) // modify
+				line = append(line, matrix.AtOrgPoints(x, y)) // modify
 			}
 		} else {
 			for i := 0; i >= length; i-- {
 				k := float64(end.X-start.X) / float64(length)
 				y := start.Y + i
 				x := start.X + int(k*float64(i))
-				line = append(line, matrix.At(x, y)) // modify
+				line = append(line, matrix.AtOrgPoints(x, y)) // modify
 			}
 		}
 	}
@@ -898,7 +907,7 @@ func DecodeImg(img image.Image) (*Matrix, error) {
 	for _, y := range qrLeftCL {
 		var line []bool
 		for _, x := range qrTopCL {
-			line = append(line, matrix.At(x, y))
+			line = append(line, matrix.AtOrgPoints(x, y))
 		}
 		matrix.Points = append(matrix.Points, line)
 	}
