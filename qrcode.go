@@ -153,23 +153,33 @@ func (mx *Matrix) DataArea() *Matrix {
 	// 这三个定位图案有白边叫Separators for Position Detection Patterns。之所以三个而不是四个意思就是三个就可以标识一个矩形了。
 	for y := 0; y < 9; y++ {
 		for x := 0; x < 9; x++ {
-			da.Points[y][x] = false //左上
+			if y < len(mx.Points) && x < len(mx.Points[y]) {
+				da.Points[y][x] = false //左上
+			}
 		}
 	}
 	for y := 0; y < 9; y++ {
 		for x := 0; x < 8; x++ {
-			da.Points[y][maxPos-x] = false //右上
+			if y < len(mx.Points) && maxPos-x < len(mx.Points[y]) {
+				da.Points[y][maxPos-x] = false //右上
+			}
 		}
 	}
 	for y := 0; y < 8; y++ {
 		for x := 0; x < 9; x++ {
-			da.Points[maxPos-y][x] = false //左下
+			if maxPos-y < len(mx.Points) && x < len(mx.Points[y]) {
+				da.Points[maxPos-y][x] = false //左下
+			}
 		}
 	}
 	// Timing Patterns也是用于定位的。原因是二维码有40种尺寸，尺寸过大了后需要有根标准线，不然扫描的时候可能会扫歪了。
 	for i := 0; i < width; i++ {
-		da.Points[6][i] = false
-		da.Points[i][6] = false
+		if 6 < len(mx.Points) && i < len(mx.Points[6]) {
+			da.Points[6][i] = false
+		}
+		if i < len(mx.Points) && 6 < len(mx.Points[i]) {
+			da.Points[i][6] = false
+		}
 	}
 	//Alignment Patterns 只有Version 2以上（包括Version2）的二维码需要这个东东，同样是为了定位用的。
 	version := da.Version()
@@ -181,7 +191,9 @@ func (mx *Matrix) DataArea() *Matrix {
 			}
 			for y := AlignmentY - 2; y <= AlignmentY+2; y++ {
 				for x := AlignmentX - 2; x <= AlignmentX+2; x++ {
-					da.Points[y][x] = false
+					if y < len(mx.Points) && x < len(mx.Points[y]) {
+						da.Points[y][x] = false
+					}
 				}
 			}
 		}
@@ -190,8 +202,12 @@ func (mx *Matrix) DataArea() *Matrix {
 	if version >= 7 {
 		for i := maxPos - 10; i < maxPos-7; i++ {
 			for j := 0; j < 6; j++ {
-				da.Points[i][j] = false
-				da.Points[j][i] = false
+				if i < len(mx.Points) && j < len(mx.Points[i]) {
+					da.Points[i][j] = false
+				}
+				if j < len(mx.Points) && i < len(mx.Points[j]) {
+					da.Points[j][i] = false
+				}
 			}
 		}
 	}
@@ -527,8 +543,8 @@ func GetData(unmaskMatrix, dataArea *Matrix) []bool {
 	for t := maxPos; t > 0; {
 		for y := maxPos; y >= 0; y-- {
 			for x := t; x >= t-1; x-- {
-				if dataArea.Points[y][x] {
-					data = append(data, unmaskMatrix.Points[y][x])
+				if dataArea.AtPoints(x, y) {
+					data = append(data, unmaskMatrix.AtPoints(x, y))
 				}
 			}
 		}
@@ -538,8 +554,8 @@ func GetData(unmaskMatrix, dataArea *Matrix) []bool {
 		}
 		for y := 0; y <= maxPos; y++ {
 			for x := t; x >= t-1 && x >= 0; x-- {
-				if x < len(unmaskMatrix.Points[y]) && dataArea.Points[y][x] {
-					data = append(data, unmaskMatrix.Points[y][x])
+				if x < len(unmaskMatrix.Points[y]) && dataArea.AtPoints(x, y) {
+					data = append(data, unmaskMatrix.AtPoints(x, y))
 				}
 			}
 		}
