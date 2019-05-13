@@ -17,7 +17,6 @@ func main() {
 		return
 	}
 	defer fi.Close()
-	qrcode.SetDebug(false)
 	qrMatrix, err := qrcode.Decode(fi)
 	if !check(err) {
 		return

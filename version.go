@@ -2868,7 +2868,7 @@ var dataEncoderTypeMap = map[dataEncoderType]*dataEncoder{
 	},
 }
 
-func GetDataEncoder(version int) (de *dataEncoder, err error) {
+func GetDataEncoder(version int) (*dataEncoder, error) {
 	switch {
 	case version >= 1 && version <= 9:
 		return dataEncoderTypeMap[dataEncoderType1To9], nil
@@ -2877,12 +2877,11 @@ func GetDataEncoder(version int) (de *dataEncoder, err error) {
 	case version >= 27 && version <= 40:
 		return dataEncoderTypeMap[dataEncoderType27To40], nil
 	default:
-		//panic("Version not found")
-		return nil, errors.New("Version Not Found")
+		return nil, errors.New("version not found")
 	}
 }
 
-func (de *dataEncoder) CharCountBits(format int) (offset int, err error) {
+func (de *dataEncoder) CharCountBits(format int) (int, error) {
 	switch format {
 	case 1:
 		return de.numNumericCharCountBits, nil
@@ -2891,8 +2890,6 @@ func (de *dataEncoder) CharCountBits(format int) (offset int, err error) {
 	case 4:
 		return de.numByteCharCountBits, nil
 	default:
-		//panic(fmt.Sprintf("format not found : %d", format))
-		return -1, errors.New(fmt.Sprintf("Format Not Found: %d", format))
+		return -1, fmt.Errorf("format not found : %d", format)
 	}
-	return 0, err
 }
